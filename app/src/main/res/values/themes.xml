@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Despierta" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/naranja</item>
+        <item name="colorPrimaryVariant">@color/naranja_oscuro</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="colorSecondary">@color/naranja</item>
+        <item name="colorOnSecondary">@color/blanco</item>
+    </style>
+</resources>

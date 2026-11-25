@@ -1,0 +1,44 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Compilar
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Renombrar APK
+        run: cp app/build/outputs/apk/release/app-release.apk Despierta.apk
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Despierta-apk
+          path: Despierta.apk
+
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Despierta v1.0.${{ github.run_number }}
+          body: APK compilado automáticamente desde el commit ${{ github.sha }}
+          files: Despierta.apk

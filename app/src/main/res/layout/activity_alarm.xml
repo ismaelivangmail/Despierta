@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/noche">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/vistaCamara"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/txtReloj"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@color/velo"
+        android:gravity="center"
+        android:paddingTop="36dp"
+        android:paddingBottom="12dp"
+        android:textColor="@color/blanco"
+        android:textSize="48sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/velo"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¡Despierta! Apunta la cámara a uno de estos:"
+            android:textColor="@color/blanco"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtObjetivos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/blanco"
+            android:textSize="22sp" />
+
+        <ProgressBar
+            android:id="@+id/barraDeteccion"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="14dp"
+            android:layout_marginTop="12dp"
+            android:max="100"
+            android:progressTint="@color/naranja" />
+
+        <TextView
+            android:id="@+id/txtDeteccion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Buscando…"
+            android:textColor="@color/blanco"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>
