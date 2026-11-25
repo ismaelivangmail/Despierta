@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Despierta" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/naranja</item>
-        <item name="colorPrimaryVariant">@color/naranja_oscuro</item>
-        <item name="colorOnPrimary">@color/blanco</item>
-        <item name="colorSecondary">@color/naranja</item>
-        <item name="colorOnSecondary">@color/blanco</item>
+    <style name="Theme.Despierta" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/azul</item>
+        <item name="colorPrimaryVariant">@color/azul</item>
+        <item name="colorOnPrimary">#FF101010</item>
+        <item name="colorSecondary">@color/azul</item>
+        <item name="colorOnSecondary">#FF101010</item>
+        <item name="android:windowBackground">#FF000000</item>
+        <item name="android:statusBarColor">#FF000000</item>
+        <item name="android:navigationBarColor">#FF000000</item>
+    </style>
+
+    <!-- Rueda de hora grande y blanca -->
+    <style name="RuedaHora" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="android:textColorPrimary">@color/blanco</item>
+        <item name="android:textColorSecondary">#FF555555</item>
+        <item name="android:textSize">30sp</item>
     </style>
 </resources>

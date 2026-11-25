@@ -6,6 +6,6 @@ import android.content.Intent
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Programador.programar(context)
+        Programador.programarTodas(context)
     }
 }

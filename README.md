@@ -3,11 +3,13 @@
 Despertador para Android que **solo se apaga cuando le muestras a la cámara uno de tus objetos** (por ejemplo, el papel de baño). Así te obliga a levantarte de la cama.
 
 ## Cómo funciona
-1. Elige la hora y el tono.
-2. Cuando suena, aparecen **7 objetos de la casa elegidos al azar** (máximo 2 por zona: baño, cocina, limpieza, sala). Ninguno es de la recámara, así que hay que salir del cuarto.
-3. Apunta la cámara a cualquiera de ellos; cuando el teléfono lo reconoce unos instantes, la alarma se apaga.
+- Lista de alarmas estilo reloj de Samsung: varias alarmas, nombre, días de la semana, sonido y vibración.
+- Para apagarla, al sonar puedes elegir:
+  1. 🧻 **Objetos**: mostrar a la cámara uno de 7 objetos de la casa elegidos al azar (ninguno de la recámara).
+  2. 🧭 **Despertador virtual** (opcional): aparece en una dirección al azar; gira con el teléfono hasta verlo y camina hacia él 1–5 m. Usa giroscopio/brújula y contador de pasos, funciona sin ARCore.
+  3. 👣 **Contar pasos** (opcional): caminar de 10 a 100 pasos.
 
-El reconocimiento se hace en el propio teléfono (MobileNet V2 + TensorFlow Lite), **sin internet**.
+El reconocimiento de objetos se hace en el propio teléfono (MobileNet V2 + TensorFlow Lite), **sin internet**.
 Por seguridad, la alarma se calla sola a los 30 minutos.
 
 ## Descargar el APK

@@ -34,6 +34,7 @@ class AlarmService : Service() {
     }
 
     private var reproductor: MediaPlayer? = null
+    private var alarma: Alarma? = null
     private var vibrador: Vibrator? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var volumenOriginal = -1
@@ -42,12 +43,18 @@ class AlarmService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val primeraVez = !sonando
+        if (primeraVez) {
+            val id = intent?.getIntExtra("id", -1)?.takeIf { it >= 0 } ?: Prefs.sonandoId(this)
+            Prefs.guardarSonandoId(this, id)
+            alarma = Prefs.alarma(this, id)
+        }
         crearCanal()
         val tipo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
         ServiceCompat.startForeground(this, ID_NOTIF, crearNotificacion(), tipo)
 
-        if (!sonando) {
+        if (primeraVez) {
             sonando = true
             Objetos.sorteoActual(this)
             val pm = getSystemService(PowerManager::class.java)
@@ -55,7 +62,7 @@ class AlarmService : Service() {
                 acquire(LIMITE_MS + 60_000L)
             }
             sonar()
-            vibrar()
+            if (alarma?.vibrar != false) vibrar()
             handler.postDelayed({ stopSelf() }, LIMITE_MS)
             abrirPantallaAlarma()
         }
@@ -78,7 +85,7 @@ class AlarmService : Service() {
         try { am.setStreamVolume(AudioManager.STREAM_ALARM, max, 0) } catch (_: Exception) {}
 
         val candidatos = listOfNotNull(
-            Prefs.tono(this),
+            alarma?.tono?.let { Uri.parse(it) },
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -140,7 +147,7 @@ class AlarmService : Service() {
         )
         return NotificationCompat.Builder(this, CANAL)
             .setSmallIcon(R.drawable.ic_alarma)
-            .setContentTitle("⏰ ¡Despierta!")
+            .setContentTitle("⏰ " + (alarma?.nombre?.takeIf { it.isNotBlank() } ?: "¡Despierta!"))
             .setContentText("Toca aquí y muestra uno de tus objetos a la cámara para apagarla")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)

@@ -1,7 +1,7 @@
 package com.ismael.despierta
 
 import android.content.Context
-import android.net.Uri
+import org.json.JSONArray
 
 object Prefs {
     private const val ARCHIVO = "despierta"
@@ -9,42 +9,58 @@ object Prefs {
     private fun sp(c: Context) =
         c.createDeviceProtectedStorageContext().getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE)
 
-    fun configurada(c: Context) = sp(c).contains("hora")
-    fun hora(c: Context) = sp(c).getInt("hora", 7)
-    fun minuto(c: Context) = sp(c).getInt("minuto", 0)
-    fun activa(c: Context) = sp(c).getBoolean("activa", false)
-    /** Días de la semana (Calendar.SUNDAY..SATURDAY) en que suena. Vacío = solo una vez. */
-    fun dias(c: Context): Set<Int> {
-        val s = sp(c).getString("dias", null)
-            ?: return if (sp(c).getBoolean("repetir", true)) (1..7).toSet() else emptySet()
-        return s.split(",").mapNotNull { it.toIntOrNull() }.toSet()
-    }
-    fun tono(c: Context): Uri? = sp(c).getString("tono", null)?.let { Uri.parse(it) }
+    // ---------- Alarmas ----------
 
-    fun guardar(c: Context, hora: Int, minuto: Int, activa: Boolean, dias: Set<Int>, tono: Uri?) {
-        sp(c).edit()
-            .putInt("hora", hora)
-            .putInt("minuto", minuto)
-            .putBoolean("activa", activa)
-            .putString("dias", dias.sorted().joinToString(","))
-            .putString("tono", tono?.toString())
-            .apply()
+    fun alarmas(c: Context): MutableList<Alarma> {
+        migrar(c)
+        val texto = sp(c).getString("alarmas", "[]")!!
+        val arr = try { JSONArray(texto) } catch (_: Exception) { JSONArray() }
+        return (0 until arr.length()).mapNotNull {
+            try { Alarma.deJson(arr.getJSONObject(it)) } catch (_: Exception) { null }
+        }.sortedWith(compareBy({ it.hora }, { it.minuto })).toMutableList()
     }
 
-    // Despertador virtual en realidad aumentada
-    fun raActivo(c: Context) = sp(c).getBoolean("ra_activo", false)
-    fun raDistancia(c: Context) = sp(c).getInt("ra_distancia", 3).coerceIn(1, 5)
-
-    fun guardarRA(c: Context, activo: Boolean, distancia: Int) {
-        sp(c).edit().putBoolean("ra_activo", activo).putInt("ra_distancia", distancia.coerceIn(1, 5)).apply()
+    private fun guardarTodas(c: Context, lista: List<Alarma>) {
+        val arr = JSONArray()
+        lista.forEach { arr.put(it.aJson()) }
+        sp(c).edit().putString("alarmas", arr.toString()).commit()
     }
 
-    fun desactivar(c: Context) {
-        sp(c).edit().putBoolean("activa", false).apply()
+    fun alarma(c: Context, id: Int): Alarma? = alarmas(c).firstOrNull { it.id == id }
+
+    fun guardarAlarma(c: Context, a: Alarma) {
+        val lista = alarmas(c)
+        val i = lista.indexOfFirst { it.id == a.id }
+        if (i >= 0) lista[i] = a else lista += a
+        guardarTodas(c, lista)
     }
 
-    // Objetos sorteados para la alarma que está sonando (se guardan para que no cambien
-    // si se cierra y vuelve a abrir la pantalla de la alarma).
+    fun borrarAlarma(c: Context, id: Int) {
+        guardarTodas(c, alarmas(c).filter { it.id != id })
+    }
+
+    fun nuevoId(c: Context): Int = (alarmas(c).maxOfOrNull { it.id } ?: 0) + 1
+
+    /** Convierte la alarma única de versiones anteriores en la primera de la lista. */
+    private fun migrar(c: Context) {
+        val p = sp(c)
+        if (p.contains("alarmas") || !p.contains("hora")) return
+        val dias = p.getString("dias", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet()
+            ?: if (p.getBoolean("repetir", true)) (1..7).toSet() else emptySet()
+        val a = Alarma(
+            id = 1, hora = p.getInt("hora", 7), minuto = p.getInt("minuto", 0), dias = dias,
+            activa = p.getBoolean("activa", false), tono = p.getString("tono", null)
+        )
+        val arr = JSONArray().put(a.aJson())
+        p.edit().putString("alarmas", arr.toString()).commit()
+    }
+
+    // ---------- Alarma sonando ----------
+
+    fun sonandoId(c: Context) = sp(c).getInt("sonando_id", -1)
+    fun guardarSonandoId(c: Context, id: Int) { sp(c).edit().putInt("sonando_id", id).commit() }
+
+    /** Objetos sorteados para la alarma que está sonando. */
     fun sorteo(c: Context): List<String> =
         sp(c).getString("sorteo", "")!!.split(",").filter { it.isNotBlank() }
 

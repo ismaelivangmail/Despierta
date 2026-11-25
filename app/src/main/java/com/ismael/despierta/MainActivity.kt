@@ -1,175 +1,184 @@
 package com.ismael.despierta
 
 import android.Manifest
-import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.RingtoneManager
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.format.DateFormat
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.TimePicker
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.IntentCompat
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.slider.Slider
-import com.google.ar.core.ArCoreApk
-import android.widget.ProgressBar
-import java.util.Calendar
 import com.google.android.material.switchmaterial.SwitchMaterial
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var selectorHora: TimePicker
-    private lateinit var swActiva: SwitchMaterial
-    private lateinit var txtRepeticion: TextView
-    private lateinit var swRA: SwitchMaterial
-    private lateinit var txtRA: TextView
-    private lateinit var txtDistancia: TextView
-    private lateinit var sliderDistancia: Slider
-    private val chipsDias = mutableMapOf<Int, Chip>()
-    private lateinit var txtTono: TextView
-    private lateinit var txtEstado: TextView
+    private lateinit var lista: LinearLayout
+    private lateinit var txtProxima: TextView
+    private lateinit var txtVacio: TextView
     private lateinit var btnPantallaCompleta: MaterialButton
-
-    private var tono: Uri? = null
 
     private val pedirPermisos =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
 
-    private val elegirTono =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-            val datos = r.data ?: return@registerForActivityResult
-            if (r.resultCode == RESULT_OK) {
-                tono = IntentCompat.getParcelableExtra(
-                    datos, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java
-                )
-                mostrarTono()
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        selectorHora = findViewById(R.id.selectorHora)
-        swActiva = findViewById(R.id.swActiva)
-        txtRepeticion = findViewById(R.id.txtRepeticion)
-        txtTono = findViewById(R.id.txtTono)
-        txtEstado = findViewById(R.id.txtEstado)
+        lista = findViewById(R.id.listaAlarmas)
+        txtProxima = findViewById(R.id.txtProxima)
+        txtVacio = findViewById(R.id.txtVacio)
         btnPantallaCompleta = findViewById(R.id.btnPantallaCompleta)
 
-        selectorHora.setIs24HourView(DateFormat.is24HourFormat(this))
-        selectorHora.hour = Prefs.hora(this)
-        selectorHora.minute = Prefs.minuto(this)
-        swActiva.isChecked = Prefs.activa(this) || !Prefs.configurada(this)
-        crearDias(Prefs.dias(this))
-        prepararRA()
-        findViewById<TextView>(R.id.txtVersion).text = "Versión ${Actualizador.nombreActual(this)}"
-        findViewById<MaterialButton>(R.id.btnActualizar).setOnClickListener { buscarActualizacion(true) }
-        if (savedInstanceState == null) buscarActualizacion(false)
-        tono = Prefs.tono(this)
-        mostrarTono()
-
-        findViewById<MaterialButton>(R.id.btnTono).setOnClickListener {
-            val i = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM or RingtoneManager.TYPE_RINGTONE)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Tono de la alarma")
-                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                    tono ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-            }
-            elegirTono.launch(i)
+        findViewById<View>(R.id.btnAgregar).setOnClickListener {
+            startActivity(Intent(this, EditarActivity::class.java))
         }
-
-        findViewById<MaterialButton>(R.id.btnGuardar).setOnClickListener { guardar() }
-
-        findViewById<MaterialButton>(R.id.btnProbar).setOnClickListener {
-            guardarPreferencias()
-            Programador.programar(this)
-            Prefs.borrarSorteo(this)
-            ContextCompat.startForegroundService(this, Intent(this, AlarmService::class.java))
-            startActivity(Intent(this, AlarmActivity::class.java))
-        }
-
         btnPantallaCompleta.setOnClickListener {
             if (Build.VERSION.SDK_INT >= 34) {
-                startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                    Uri.parse("package:$packageName")))
+                startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName")))
             }
         }
+        findViewById<TextView>(R.id.txtVersion).text = "Versión ${Actualizador.nombreActual(this)}"
+        findViewById<MaterialButton>(R.id.btnActualizar).setOnClickListener { buscarActualizacion(true) }
 
+        Programador.programarTodas(this)
         pedirPermisosNecesarios()
+        if (savedInstanceState == null) buscarActualizacion(false)
     }
 
     override fun onResume() {
         super.onResume()
+        pintarLista()
         revisarPantallaCompleta()
-        mostrarEstado()
         instalarPendiente()
     }
 
-    private fun mostrarTono() {
-        val nombre = tono?.let { RingtoneManager.getRingtone(this, it)?.getTitle(this) } ?: "predeterminado"
-        txtTono.text = "Tono: $nombre"
-    }
+    // ---------- Lista ----------
 
-    private fun guardarPreferencias() {
-        Prefs.guardarRA(this, swRA.isEnabled && swRA.isChecked, sliderDistancia.value.toInt())
-        Prefs.guardar(
-            this, selectorHora.hour, selectorHora.minute,
-            swActiva.isChecked, diasElegidos(), tono
-        )
-    }
+    private fun pintarLista() {
+        lista.removeAllViews()
+        val alarmas = Prefs.alarmas(this)
+        txtVacio.visibility = if (alarmas.isEmpty()) View.VISIBLE else View.GONE
+        lista.visibility = if (alarmas.isEmpty()) View.GONE else View.VISIBLE
+        val formato24 = DateFormat.is24HourFormat(this)
 
-    private fun guardar() {
-        guardarPreferencias()
-        val cuando = Programador.programar(this)
-        if (cuando != null) {
-            val falta = cuando - System.currentTimeMillis()
-            val h = falta / 3_600_000
-            val m = (falta / 60_000) % 60
-            Toast.makeText(this, "Sonará en $h h $m min", Toast.LENGTH_LONG).show()
-        } else {
-            Toast.makeText(this, "Alarma desactivada", Toast.LENGTH_SHORT).show()
-        }
-        mostrarEstado()
-    }
-
-    private fun mostrarEstado() {
-        txtEstado.text = if (Prefs.activa(this)) {
-            val cuando = Programador.proximaVez(this)
-            val f = SimpleDateFormat("EEEE HH:mm", Locale("es"))
-            "Próxima alarma: ${f.format(Date(cuando))}"
-        } else "Sin alarma programada"
-
-        if (Build.VERSION.SDK_INT in Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2) {
-            val am = getSystemService(AlarmManager::class.java)
-            if (!am.canScheduleExactAlarms()) {
-                txtEstado.append("\n⚠️ Permite \"Alarmas y recordatorios\" en Ajustes para que suene a la hora exacta.")
+        alarmas.forEachIndexed { i, a ->
+            if (i > 0) {
+                lista.addView(View(this).apply {
+                    setBackgroundColor(0xFF3A3B40.toInt())
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2)
+                })
             }
+            val v = layoutInflater.inflate(R.layout.item_alarma, lista, false)
+            val txtNombre = v.findViewById<TextView>(R.id.txtNombre)
+            val txtHora = v.findViewById<TextView>(R.id.txtHora)
+            val txtAmPm = v.findViewById<TextView>(R.id.txtAmPm)
+            val txtDias = v.findViewById<TextView>(R.id.txtDias)
+            val txtRetos = v.findViewById<TextView>(R.id.txtRetos)
+            val sw = v.findViewById<SwitchMaterial>(R.id.swActiva)
+
+            txtNombre.text = a.nombre
+            txtNombre.visibility = if (a.nombre.isBlank()) View.GONE else View.VISIBLE
+            if (formato24) {
+                txtHora.text = "%d:%02d".format(a.hora, a.minuto)
+                txtAmPm.text = ""
+            } else {
+                val h12 = if (a.hora % 12 == 0) 12 else a.hora % 12
+                txtHora.text = "%d:%02d".format(h12, a.minuto)
+                txtAmPm.text = if (a.hora < 12) "a.m." else "p.m."
+            }
+            txtDias.text = diasEnColor(a.dias)
+            val retos = mutableListOf("🧻 objetos")
+            if (a.virtual) retos += "🧭 virtual ${a.distancia} m"
+            if (a.pasos) retos += "👣 ${a.numPasos} pasos"
+            txtRetos.text = retos.joinToString("  ·  ")
+
+            val alfa = if (a.activa) 1f else 0.45f
+            txtHora.alpha = alfa; txtAmPm.alpha = alfa; txtNombre.alpha = alfa; txtDias.alpha = alfa
+
+            sw.isChecked = a.activa
+            sw.setOnCheckedChangeListener { _, activa ->
+                a.activa = activa
+                Prefs.guardarAlarma(this, a)
+                val cuando = Programador.programar(this, a)
+                if (cuando != null) avisarCuanto(cuando)
+                pintarLista()
+            }
+            v.setOnClickListener {
+                startActivity(Intent(this, EditarActivity::class.java).putExtra("id", a.id))
+            }
+            v.setOnLongClickListener {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("¿Borrar esta alarma?")
+                    .setPositiveButton("Borrar") { _, _ ->
+                        Programador.cancelar(this, a.id)
+                        Prefs.borrarAlarma(this, a.id)
+                        pintarLista()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+                true
+            }
+            lista.addView(v)
+        }
+
+        val prox = Programador.proxima(this)
+        txtProxima.text = if (prox == null) "Sin alarmas activas" else "Próxima alarma en " + faltan(prox.second)
+    }
+
+    /** "D L M X J V S" con los días elegidos en azul y negritas. */
+    private fun diasEnColor(dias: Set<Int>): CharSequence {
+        val sb = SpannableStringBuilder()
+        val azul = ContextCompat.getColor(this, R.color.azul)
+        val gris = ContextCompat.getColor(this, R.color.gris)
+        for ((i, par) in Alarma.SEMANA.withIndex()) {
+            if (i > 0) sb.append(" ")
+            val ini = sb.length
+            sb.append(par.second)
+            val elegido = par.first in dias
+            sb.setSpan(ForegroundColorSpan(if (elegido) azul else gris), ini, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (elegido) sb.setSpan(StyleSpan(Typeface.BOLD), ini, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        if (dias.isEmpty()) sb.append("   ·  una vez")
+        return sb
+    }
+
+    private fun faltan(cuando: Long): String {
+        val min = ((cuando - System.currentTimeMillis()) / 60_000).coerceAtLeast(0)
+        val d = min / 1440
+        val h = (min % 1440) / 60
+        val m = min % 60
+        return when {
+            d > 0 -> "$d d $h h"
+            h > 0 -> "$h h $m min"
+            else -> "$m min"
         }
     }
+
+    private fun avisarCuanto(cuando: Long) {
+        Toast.makeText(this, "Sonará en " + faltan(cuando), Toast.LENGTH_SHORT).show()
+    }
+
+    // ---------- Permisos ----------
 
     private fun revisarPantallaCompleta() {
         if (Build.VERSION.SDK_INT >= 34) {
             val nm = getSystemService(NotificationManager::class.java)
-            btnPantallaCompleta.visibility =
-                if (nm.canUseFullScreenIntent()) android.view.View.GONE else android.view.View.VISIBLE
+            btnPantallaCompleta.visibility = if (nm.canUseFullScreenIntent()) View.GONE else View.VISIBLE
         }
     }
 
@@ -183,56 +192,6 @@ class MainActivity : AppCompatActivity() {
             faltan += Manifest.permission.POST_NOTIFICATIONS
         }
         if (faltan.isNotEmpty()) pedirPermisos.launch(faltan.toTypedArray())
-    }
-
-    // ---------- Repetición ----------
-
-    private val ordenDias = listOf(
-        Calendar.MONDAY to "Lun", Calendar.TUESDAY to "Mar", Calendar.WEDNESDAY to "Mié",
-        Calendar.THURSDAY to "Jue", Calendar.FRIDAY to "Vie", Calendar.SATURDAY to "Sáb",
-        Calendar.SUNDAY to "Dom"
-    )
-
-    private fun crearDias(elegidos: Set<Int>) {
-        val grupo = findViewById<ChipGroup>(R.id.grupoDias)
-        for ((dia, nombre) in ordenDias) {
-            val chip = Chip(this).apply {
-                text = nombre
-                isCheckable = true
-                isCheckedIconVisible = false
-                isChecked = dia in elegidos
-                setOnCheckedChangeListener { _, _ -> mostrarRepeticion() }
-            }
-            chipsDias[dia] = chip
-            grupo.addView(chip)
-        }
-        val atajos = findViewById<ChipGroup>(R.id.grupoAtajos)
-        val opciones = listOf(
-            "Una vez" to emptySet<Int>(),
-            "Diario" to (1..7).toSet(),
-            "Lun a Vie" to setOf(Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY),
-            "Fin de semana" to setOf(Calendar.SATURDAY, Calendar.SUNDAY)
-        )
-        for ((nombre, dias) in opciones) {
-            atajos.addView(Chip(this).apply {
-                text = nombre
-                setOnClickListener { chipsDias.forEach { (d, c) -> c.isChecked = d in dias } }
-            })
-        }
-        mostrarRepeticion()
-    }
-
-    private fun diasElegidos(): Set<Int> = chipsDias.filterValues { it.isChecked }.keys
-
-    private fun mostrarRepeticion() {
-        val d = diasElegidos()
-        txtRepeticion.text = when {
-            d.isEmpty() -> "Sonará una sola vez"
-            d.size == 7 -> "Todos los días"
-            d == setOf(Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY) -> "De lunes a viernes"
-            d == setOf(Calendar.SATURDAY, Calendar.SUNDAY) -> "Fines de semana"
-            else -> "Cada semana: " + ordenDias.filter { it.first in d }.joinToString(", ") { it.second }
-        }
     }
 
     // ---------- Actualizaciones ----------
@@ -297,62 +256,5 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) return
         archivoPendiente = null
         Actualizador.instalar(this, f)
-    }
-
-    // ---------- Realidad aumentada ----------
-
-    private fun prepararRA() {
-        swRA = findViewById(R.id.swRA)
-        txtRA = findViewById(R.id.txtRA)
-        txtDistancia = findViewById(R.id.txtDistancia)
-        sliderDistancia = findViewById(R.id.sliderDistancia)
-        swRA.isChecked = Prefs.raActivo(this)
-        sliderDistancia.value = Prefs.raDistancia(this).toFloat()
-        sliderDistancia.addOnChangeListener { _, _, _ -> mostrarDistancia() }
-        swRA.setOnCheckedChangeListener { _, _ -> mostrarDistancia() }
-        mostrarDistancia()
-        revisarRA(0)
-    }
-
-    private fun mostrarDistancia() {
-        val d = sliderDistancia.value.toInt()
-        txtDistancia.text = "El despertador aparecerá a $d m de ti"
-        val usable = swRA.isEnabled && swRA.isChecked
-        sliderDistancia.isEnabled = usable
-        txtDistancia.alpha = if (usable) 1f else 0.4f
-    }
-
-    private fun revisarRA(intento: Int) {
-        val disp = try {
-            ArCoreApk.getInstance().checkAvailability(this)
-        } catch (_: Exception) {
-            ArCoreApk.Availability.UNKNOWN_ERROR
-        }
-        if (disp.isTransient && intento < 30) {
-            txtRA.text = "Revisando compatibilidad…"
-            txtRA.postDelayed({ if (!isFinishing) revisarRA(intento + 1) }, 300)
-            return
-        }
-        when {
-            disp == ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
-                swRA.isEnabled = true
-                txtRA.text = "✅ Tu teléfono es compatible. Al sonar podrás elegir buscar los objetos o el despertador virtual."
-            }
-            disp.isSupported -> {
-                swRA.isEnabled = true
-                txtRA.text = "✅ Tu teléfono es compatible. La primera vez te pedirá instalar \"Servicios de Google Play para RA\" (pruébalo antes con \"Probar alarma ahora\")."
-            }
-            disp == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
-                swRA.isEnabled = false
-                swRA.isChecked = false
-                txtRA.text = "❌ Tu teléfono no es compatible con realidad aumentada (ARCore). Solo podrás apagarla con objetos de la casa."
-            }
-            else -> {
-                swRA.isEnabled = false
-                swRA.isChecked = false
-                txtRA.text = "⚠️ No se pudo comprobar la compatibilidad. Conéctate a internet y vuelve a abrir la app."
-            }
-        }
-        mostrarDistancia()
     }
 }

@@ -7,13 +7,17 @@ import androidx.core.content.ContextCompat
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        // Programar la siguiente (mañana) o desactivar si no se repite
-        if (Prefs.dias(context).isNotEmpty()) {
-            Programador.programar(context)
-        } else {
-            Prefs.desactivar(context)
+        val id = intent.getIntExtra("id", -1)
+        val a = Prefs.alarma(context, id)
+        if (a != null) {
+            if (a.dias.isEmpty()) {
+                a.activa = false
+                Prefs.guardarAlarma(context, a)
+            } else {
+                Programador.programar(context, a)
+            }
         }
-        Prefs.borrarSorteo(context)
-        ContextCompat.startForegroundService(context, Intent(context, AlarmService::class.java))
+        if (AlarmService.sonando) return
+        Alarmas.sonar(context, id)
     }
 }

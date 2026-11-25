@@ -59,5 +59,4 @@ dependencies {
     implementation("androidx.camera:camera-view:$camerax")
 
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
-    implementation("com.google.ar:core:1.41.0")
 }

@@ -1,181 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="#FF000000">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Despierta ⏰"
-            android:textSize="30sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="Para apagarla tendrás que levantarte y mostrarle a la cámara un objeto de la casa."
-            android:alpha="0.7" />
-
-        <TimePicker
-            android:id="@+id/selectorHora"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:timePickerMode="spinner" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/swActiva"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Alarma activada"
-            android:textSize="17sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Repetir"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/grupoDias"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/grupoAtajos"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/txtRepeticion"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:alpha="0.7" />
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Despierta"
+                        android:textColor="@color/blanco"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtProxima"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/gris"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnAgregar"
+                    android:layout_width="72dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/fondo_pastilla"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/blanco"
+                    android:textSize="32sp" />
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/txtTono"
-                android:layout_width="0dp"
+                android:id="@+id/txtVacio"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Tono: predeterminado"
-                android:textSize="16sp" />
+                android:layout_marginTop="60dp"
+                android:gravity="center"
+                android:text="No hay alarmas.\nToca + para crear una."
+                android:textColor="@color/gris"
+                android:textSize="18sp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/listaAlarmas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/fondo_tarjeta"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="Mantén presionada una alarma para borrarla"
+                android:textColor="@color/gris"
+                android:textSize="13sp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnTono"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:id="@+id/btnPantallaCompleta"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Elegir tono" />
+                android:layout_marginTop="12dp"
+                android:text="⚠️ Permitir alarma en pantalla completa"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/txtVersion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:textColor="@color/gris" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnActualizar"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Buscar actualizaciones" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:padding="12dp"
-            android:background="#22FF6D00"
-            android:text="🎲 Al sonar aparecerán 7 objetos de la casa elegidos al azar (ninguno de la recámara). Tendrás que encontrar uno y mostrarlo a la cámara para apagarla."
-            android:textSize="16sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Segunda opción: despertador virtual"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/swRA"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Permitir apagarla encontrando un despertador en realidad aumentada"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/txtRA"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Revisando compatibilidad…"
-            android:alpha="0.8" />
-
-        <TextView
-            android:id="@+id/txtDistancia"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="16sp" />
-
-        <com.google.android.material.slider.Slider
-            android:id="@+id/sliderDistancia"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:stepSize="1"
-            android:value="3"
-            android:valueFrom="1"
-            android:valueTo="5" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGuardar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Guardar alarma" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnProbar"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Probar alarma ahora" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPantallaCompleta"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Permitir alarma en pantalla completa"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/txtEstado"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/txtVersion"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:alpha="0.6"
-            android:gravity="center" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnActualizar"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Buscar actualizaciones" />
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</FrameLayout>

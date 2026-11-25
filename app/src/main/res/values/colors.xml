@@ -5,4 +5,8 @@
     <color name="noche">#1A1A2E</color>
     <color name="blanco">#FFFFFF</color>
     <color name="velo">#CC000000</color>
+    <color name="azul">#7C83FD</color>
+    <color name="tarjeta">#1E1F22</color>
+    <color name="gris">#8A8A8F</color>
+    <color name="rojo_domingo">#FF6B6B</color>
 </resources>

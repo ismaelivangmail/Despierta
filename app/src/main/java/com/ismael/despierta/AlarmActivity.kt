@@ -51,6 +51,7 @@ class AlarmActivity : AppCompatActivity() {
     private var seguidos = 0
     @Volatile private var terminado = false
     private var vioSonando = false
+    private var nombreAlarma: String? = null
 
     private val pedirCamara = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) iniciarCamara()
@@ -59,7 +60,8 @@ class AlarmActivity : AppCompatActivity() {
 
     private val tick = object : Runnable {
         override fun run() {
-            txtReloj.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val hora = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            txtReloj.text = if (nombreAlarma.isNullOrBlank()) hora else "$hora\n$nombreAlarma"
             if (AlarmService.sonando) vioSonando = true
             if (vioSonando && !AlarmService.sonando && !terminado) {
                 // La alarma se detuvo sola (límite de tiempo): cerramos la pantalla
@@ -72,7 +74,7 @@ class AlarmActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mostrarSobreBloqueo()
+        Alarmas.mostrarSobreBloqueo(this)
         setContentView(R.layout.activity_alarm)
 
         vistaCamara = findViewById(R.id.vistaCamara)
@@ -97,15 +99,24 @@ class AlarmActivity : AppCompatActivity() {
 
         txtReloj.post(tick)
 
-        val btnRA = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnModoRA)
-        if (Prefs.raActivo(this)) {
-            btnRA.visibility = android.view.View.VISIBLE
-            btnRA.setOnClickListener {
-                // Soltar la cámara para que la use la realidad aumentada
+        val alarma = Alarmas.sonando(this)
+        val btnVirtual = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnVirtual)
+        val btnPasos = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPasos)
+        if (alarma?.virtual == true) {
+            btnVirtual.visibility = android.view.View.VISIBLE
+            btnVirtual.text = "🧭 Buscar el despertador virtual (${alarma.distancia} m)"
+            btnVirtual.setOnClickListener {
                 proveedor?.unbindAll()
-                startActivity(Intent(this, ArAlarmActivity::class.java))
+                startActivity(Intent(this, VirtualActivity::class.java))
             }
         }
+        if (alarma?.pasos == true) {
+            btnPasos.visibility = android.view.View.VISIBLE
+            btnPasos.text = "👣 Caminar ${alarma.numPasos} pasos"
+            btnPasos.setOnClickListener { startActivity(Intent(this, PasosActivity::class.java)) }
+        }
+        val nombre = alarma?.nombre?.takeIf { it.isNotBlank() }
+        nombreAlarma = nombre
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             pedirCamara.launch(Manifest.permission.CAMERA)
@@ -122,20 +133,6 @@ class AlarmActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         proveedor?.unbindAll()
-    }
-
-    private fun mostrarSobreBloqueo() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            )
-        }
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     private fun iniciarCamara() {
@@ -204,12 +201,8 @@ class AlarmActivity : AppCompatActivity() {
     private fun apagar(obj: Objeto?) {
         if (terminado) return
         terminado = true
-        stopService(Intent(this, AlarmService::class.java))
-        Toast.makeText(this, "¡Buenos días! ${obj?.emoji ?: "☀️"}", Toast.LENGTH_LONG).show()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
-        }
-        finish()
+        proveedor?.unbindAll()
+        Alarmas.apagar(this, obj?.emoji ?: "☀️")
     }
 
     override fun onDestroy() {
