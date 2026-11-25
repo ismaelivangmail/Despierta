@@ -1,131 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/noche">
+    android:background="#FFB71C1C"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="32dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="20dp">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/vistaCamara"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <TextView
-        android:id="@+id/txtReloj"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:background="@color/velo"
-        android:gravity="center"
-        android:paddingTop="36dp"
-        android:paddingBottom="12dp"
-        android:textColor="@color/blanco"
-        android:textSize="48sp"
-        android:textStyle="bold" />
-
+    <!-- Godín temblando + hora -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@color/velo"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/imgGodin"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:contentDescription="Godín despertando"
+            android:src="@drawable/godin_circulo" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtReloj"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/blanco"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtIntro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¡ARRIBA, GODÍN!"
+                android:textColor="@color/blanco"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtNombre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="La chamba no se va a hacer sola 💼"
+                android:textColor="@color/blanco"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Cámara detectando sola -->
+    <FrameLayout
+        android:id="@+id/marcoCamara"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="14dp"
+        android:layout_weight="1"
+        android:background="@drawable/marco_camara">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/vistaCamara"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@color/velo"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/txtDeteccion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📷 Apunta a uno de los objetos…"
+                android:textColor="@color/blanco"
+                android:textSize="15sp" />
+
+            <ProgressBar
+                android:id="@+id/barraDeteccion"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:layout_marginTop="6dp"
+                android:max="100"
+                android:progressTint="@color/azul" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Opciones -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/fondo_tarjeta"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="¡Despierta! Apunta la cámara a uno de estos:"
+            android:text="Apágala con cualquiera de estas:"
             android:textColor="@color/blanco"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txtObjetivos"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:lineSpacingExtra="2dp"
             android:textColor="@color/blanco"
-            android:textSize="19sp" />
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:id="@+id/filaPasos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/txtPasos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/blanco"
+                android:textSize="16sp" />
+
+            <ProgressBar
+                android:id="@+id/barraPasos"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progressTint="@color/azul" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnVirtual"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:visibility="gone" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPasos"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
-
-        <ProgressBar
-            android:id="@+id/barraDeteccion"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="14dp"
-            android:layout_marginTop="12dp"
-            android:max="100"
-            android:progressTint="@color/naranja" />
-
-        <TextView
-            android:id="@+id/txtDeteccion"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Buscando…"
-            android:textColor="@color/blanco"
-            android:textSize="16sp" />
     </LinearLayout>
-
-    <!-- Animación de entrada: el godín despertando -->
-    <LinearLayout
-        android:id="@+id/capaIntro"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FFB71C1C"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="24dp">
-
-        <ImageView
-            android:id="@+id/imgGodin"
-            android:layout_width="220dp"
-            android:layout_height="220dp"
-            android:contentDescription="Godín despertando"
-            android:src="@drawable/godin_circulo" />
-
-        <TextView
-            android:id="@+id/txtIntro"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:gravity="center"
-            android:text="¡ARRIBA, GODÍN!"
-            android:textColor="@color/blanco"
-            android:textSize="40sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/txtIntro2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:text="La chamba no se va a hacer sola 💼"
-            android:textColor="@color/blanco"
-            android:textSize="20sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
-            android:alpha="0.7"
-            android:text="Toca para continuar"
-            android:textColor="@color/blanco"
-            android:textSize="14sp" />
-    </LinearLayout>
-</FrameLayout>
+</LinearLayout>
