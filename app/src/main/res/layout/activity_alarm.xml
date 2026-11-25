@@ -47,6 +47,14 @@
             android:textColor="@color/blanco"
             android:textSize="19sp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnModoRA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="🎯 Mejor busco el despertador virtual"
+            android:visibility="gone" />
+
         <ProgressBar
             android:id="@+id/barraDeteccion"
             style="@android:style/Widget.ProgressBar.Horizontal"

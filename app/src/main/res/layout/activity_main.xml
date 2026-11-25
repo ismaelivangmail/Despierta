@@ -94,6 +94,45 @@
             android:text="🎲 Al sonar aparecerán 7 objetos de la casa elegidos al azar (ninguno de la recámara). Tendrás que encontrar uno y mostrarlo a la cámara para apagarla."
             android:textSize="16sp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Segunda opción: despertador virtual"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/swRA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="Permitir apagarla encontrando un despertador en realidad aumentada"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtRA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Revisando compatibilidad…"
+            android:alpha="0.8" />
+
+        <TextView
+            android:id="@+id/txtDistancia"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderDistancia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="1"
+            android:value="3"
+            android:valueFrom="1"
+            android:valueTo="5" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGuardar"
             android:layout_width="match_parent"

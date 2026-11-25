@@ -45,6 +45,7 @@ class AlarmActivity : AppCompatActivity() {
     private lateinit var barra: ProgressBar
 
     private var clasificador: Clasificador? = null
+    private var proveedor: ProcessCameraProvider? = null
     private lateinit var ejecutor: ExecutorService
     private var objetivos: List<Pair<Objeto, List<Int>>> = emptyList()
     private var seguidos = 0
@@ -96,11 +97,31 @@ class AlarmActivity : AppCompatActivity() {
 
         txtReloj.post(tick)
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            iniciarCamara()
-        } else {
+        val btnRA = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnModoRA)
+        if (Prefs.raActivo(this)) {
+            btnRA.visibility = android.view.View.VISIBLE
+            btnRA.setOnClickListener {
+                // Soltar la cámara para que la use la realidad aumentada
+                proveedor?.unbindAll()
+                startActivity(Intent(this, ArAlarmActivity::class.java))
+            }
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             pedirCamara.launch(Manifest.permission.CAMERA)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!terminado && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            iniciarCamara()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        proveedor?.unbindAll()
     }
 
     private fun mostrarSobreBloqueo() {
@@ -120,7 +141,9 @@ class AlarmActivity : AppCompatActivity() {
     private fun iniciarCamara() {
         val futuro = ProcessCameraProvider.getInstance(this)
         futuro.addListener({
+            if (isFinishing) return@addListener
             val proveedor = futuro.get()
+            this.proveedor = proveedor
             val vista = Preview.Builder().build().also { it.setSurfaceProvider(vistaCamara.surfaceProvider) }
             val analisis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)

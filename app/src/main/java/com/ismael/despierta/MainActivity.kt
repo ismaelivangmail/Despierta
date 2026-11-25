@@ -22,6 +22,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.slider.Slider
+import com.google.ar.core.ArCoreApk
 import android.widget.ProgressBar
 import java.util.Calendar
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -34,6 +36,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectorHora: TimePicker
     private lateinit var swActiva: SwitchMaterial
     private lateinit var txtRepeticion: TextView
+    private lateinit var swRA: SwitchMaterial
+    private lateinit var txtRA: TextView
+    private lateinit var txtDistancia: TextView
+    private lateinit var sliderDistancia: Slider
     private val chipsDias = mutableMapOf<Int, Chip>()
     private lateinit var txtTono: TextView
     private lateinit var txtEstado: TextView
@@ -71,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         selectorHora.minute = Prefs.minuto(this)
         swActiva.isChecked = Prefs.activa(this) || !Prefs.configurada(this)
         crearDias(Prefs.dias(this))
+        prepararRA()
         findViewById<TextView>(R.id.txtVersion).text = "Versión ${Actualizador.nombreActual(this)}"
         findViewById<MaterialButton>(R.id.btnActualizar).setOnClickListener { buscarActualizacion(true) }
         if (savedInstanceState == null) buscarActualizacion(false)
@@ -122,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun guardarPreferencias() {
+        Prefs.guardarRA(this, swRA.isEnabled && swRA.isChecked, sliderDistancia.value.toInt())
         Prefs.guardar(
             this, selectorHora.hour, selectorHora.minute,
             swActiva.isChecked, diasElegidos(), tono
@@ -289,5 +297,62 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) return
         archivoPendiente = null
         Actualizador.instalar(this, f)
+    }
+
+    // ---------- Realidad aumentada ----------
+
+    private fun prepararRA() {
+        swRA = findViewById(R.id.swRA)
+        txtRA = findViewById(R.id.txtRA)
+        txtDistancia = findViewById(R.id.txtDistancia)
+        sliderDistancia = findViewById(R.id.sliderDistancia)
+        swRA.isChecked = Prefs.raActivo(this)
+        sliderDistancia.value = Prefs.raDistancia(this).toFloat()
+        sliderDistancia.addOnChangeListener { _, _, _ -> mostrarDistancia() }
+        swRA.setOnCheckedChangeListener { _, _ -> mostrarDistancia() }
+        mostrarDistancia()
+        revisarRA(0)
+    }
+
+    private fun mostrarDistancia() {
+        val d = sliderDistancia.value.toInt()
+        txtDistancia.text = "El despertador aparecerá a $d m de ti"
+        val usable = swRA.isEnabled && swRA.isChecked
+        sliderDistancia.isEnabled = usable
+        txtDistancia.alpha = if (usable) 1f else 0.4f
+    }
+
+    private fun revisarRA(intento: Int) {
+        val disp = try {
+            ArCoreApk.getInstance().checkAvailability(this)
+        } catch (_: Exception) {
+            ArCoreApk.Availability.UNKNOWN_ERROR
+        }
+        if (disp.isTransient && intento < 30) {
+            txtRA.text = "Revisando compatibilidad…"
+            txtRA.postDelayed({ if (!isFinishing) revisarRA(intento + 1) }, 300)
+            return
+        }
+        when {
+            disp == ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
+                swRA.isEnabled = true
+                txtRA.text = "✅ Tu teléfono es compatible. Al sonar podrás elegir buscar los objetos o el despertador virtual."
+            }
+            disp.isSupported -> {
+                swRA.isEnabled = true
+                txtRA.text = "✅ Tu teléfono es compatible. La primera vez te pedirá instalar \"Servicios de Google Play para RA\" (pruébalo antes con \"Probar alarma ahora\")."
+            }
+            disp == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
+                swRA.isEnabled = false
+                swRA.isChecked = false
+                txtRA.text = "❌ Tu teléfono no es compatible con realidad aumentada (ARCore). Solo podrás apagarla con objetos de la casa."
+            }
+            else -> {
+                swRA.isEnabled = false
+                swRA.isChecked = false
+                txtRA.text = "⚠️ No se pudo comprobar la compatibilidad. Conéctate a internet y vuelve a abrir la app."
+            }
+        }
+        mostrarDistancia()
     }
 }

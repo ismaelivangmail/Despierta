@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
+    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -43,6 +45,17 @@
             android:turnScreenOn="true"
             android:screenOrientation="portrait"
             android:taskAffinity="com.ismael.despierta.alarma" />
+
+        <activity
+            android:name=".ArAlarmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.ismael.despierta.alarma" />
+
+        <meta-data android:name="com.google.ar.core" android:value="optional" />
 
         <service
             android:name=".AlarmService"

@@ -31,6 +31,14 @@ object Prefs {
             .apply()
     }
 
+    // Despertador virtual en realidad aumentada
+    fun raActivo(c: Context) = sp(c).getBoolean("ra_activo", false)
+    fun raDistancia(c: Context) = sp(c).getInt("ra_distancia", 3).coerceIn(1, 5)
+
+    fun guardarRA(c: Context, activo: Boolean, distancia: Int) {
+        sp(c).edit().putBoolean("ra_activo", activo).putInt("ra_distancia", distancia.coerceIn(1, 5)).apply()
+    }
+
     fun desactivar(c: Context) {
         sp(c).edit().putBoolean("activa", false).apply()
     }
