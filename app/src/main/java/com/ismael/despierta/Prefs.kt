@@ -13,15 +13,20 @@ object Prefs {
     fun hora(c: Context) = sp(c).getInt("hora", 7)
     fun minuto(c: Context) = sp(c).getInt("minuto", 0)
     fun activa(c: Context) = sp(c).getBoolean("activa", false)
-    fun repetir(c: Context) = sp(c).getBoolean("repetir", true)
+    /** Días de la semana (Calendar.SUNDAY..SATURDAY) en que suena. Vacío = solo una vez. */
+    fun dias(c: Context): Set<Int> {
+        val s = sp(c).getString("dias", null)
+            ?: return if (sp(c).getBoolean("repetir", true)) (1..7).toSet() else emptySet()
+        return s.split(",").mapNotNull { it.toIntOrNull() }.toSet()
+    }
     fun tono(c: Context): Uri? = sp(c).getString("tono", null)?.let { Uri.parse(it) }
 
-    fun guardar(c: Context, hora: Int, minuto: Int, activa: Boolean, repetir: Boolean, tono: Uri?) {
+    fun guardar(c: Context, hora: Int, minuto: Int, activa: Boolean, dias: Set<Int>, tono: Uri?) {
         sp(c).edit()
             .putInt("hora", hora)
             .putInt("minuto", minuto)
             .putBoolean("activa", activa)
-            .putBoolean("repetir", repetir)
+            .putString("dias", dias.sorted().joinToString(","))
             .putString("tono", tono?.toString())
             .apply()
     }

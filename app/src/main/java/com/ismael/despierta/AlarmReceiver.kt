@@ -8,7 +8,7 @@ import androidx.core.content.ContextCompat
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         // Programar la siguiente (mañana) o desactivar si no se repite
-        if (Prefs.repetir(context)) {
+        if (Prefs.dias(context).isNotEmpty()) {
             Programador.programar(context)
         } else {
             Prefs.desactivar(context)

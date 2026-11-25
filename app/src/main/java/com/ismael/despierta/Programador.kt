@@ -23,15 +23,21 @@ object Programador {
 
     /** Próximo momento (en ms) en que debe sonar la alarma configurada. */
     fun proximaVez(c: Context): Long {
-        val ahora = Calendar.getInstance()
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, Prefs.hora(c))
-            set(Calendar.MINUTE, Prefs.minuto(c))
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+        val dias = Prefs.dias(c)
+        val ahora = System.currentTimeMillis()
+        for (i in 0..7) {
+            val cal = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, i)
+                set(Calendar.HOUR_OF_DAY, Prefs.hora(c))
+                set(Calendar.MINUTE, Prefs.minuto(c))
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            if (cal.timeInMillis > ahora && (dias.isEmpty() || cal.get(Calendar.DAY_OF_WEEK) in dias)) {
+                return cal.timeInMillis
+            }
         }
-        if (!cal.after(ahora)) cal.add(Calendar.DAY_OF_YEAR, 1)
-        return cal.timeInMillis
+        return ahora + 24L * 3600_000L
     }
 
     /** Programa (o cancela) la alarma según lo guardado. Devuelve la hora programada o null. */

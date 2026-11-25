@@ -38,12 +38,29 @@
             android:text="Alarma activada"
             android:textSize="17sp" />
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/swRepetir"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Repetir todos los días"
-            android:textSize="17sp" />
+            android:layout_marginTop="12dp"
+            android:text="Repetir"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoDias"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoAtajos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/txtRepeticion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.7" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -106,5 +123,20 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:alpha="0.6"
+            android:gravity="center" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnActualizar"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Buscar actualizaciones" />
     </LinearLayout>
 </ScrollView>

@@ -19,6 +19,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.ProgressBar
+import java.util.Calendar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -28,7 +33,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var selectorHora: TimePicker
     private lateinit var swActiva: SwitchMaterial
-    private lateinit var swRepetir: SwitchMaterial
+    private lateinit var txtRepeticion: TextView
+    private val chipsDias = mutableMapOf<Int, Chip>()
     private lateinit var txtTono: TextView
     private lateinit var txtEstado: TextView
     private lateinit var btnPantallaCompleta: MaterialButton
@@ -55,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
         selectorHora = findViewById(R.id.selectorHora)
         swActiva = findViewById(R.id.swActiva)
-        swRepetir = findViewById(R.id.swRepetir)
+        txtRepeticion = findViewById(R.id.txtRepeticion)
         txtTono = findViewById(R.id.txtTono)
         txtEstado = findViewById(R.id.txtEstado)
         btnPantallaCompleta = findViewById(R.id.btnPantallaCompleta)
@@ -64,7 +70,10 @@ class MainActivity : AppCompatActivity() {
         selectorHora.hour = Prefs.hora(this)
         selectorHora.minute = Prefs.minuto(this)
         swActiva.isChecked = Prefs.activa(this) || !Prefs.configurada(this)
-        swRepetir.isChecked = Prefs.repetir(this)
+        crearDias(Prefs.dias(this))
+        findViewById<TextView>(R.id.txtVersion).text = "Versión ${Actualizador.nombreActual(this)}"
+        findViewById<MaterialButton>(R.id.btnActualizar).setOnClickListener { buscarActualizacion(true) }
+        if (savedInstanceState == null) buscarActualizacion(false)
         tono = Prefs.tono(this)
         mostrarTono()
 
@@ -104,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         revisarPantallaCompleta()
         mostrarEstado()
+        instalarPendiente()
     }
 
     private fun mostrarTono() {
@@ -114,7 +124,7 @@ class MainActivity : AppCompatActivity() {
     private fun guardarPreferencias() {
         Prefs.guardar(
             this, selectorHora.hour, selectorHora.minute,
-            swActiva.isChecked, swRepetir.isChecked, tono
+            swActiva.isChecked, diasElegidos(), tono
         )
     }
 
@@ -165,5 +175,119 @@ class MainActivity : AppCompatActivity() {
             faltan += Manifest.permission.POST_NOTIFICATIONS
         }
         if (faltan.isNotEmpty()) pedirPermisos.launch(faltan.toTypedArray())
+    }
+
+    // ---------- Repetición ----------
+
+    private val ordenDias = listOf(
+        Calendar.MONDAY to "Lun", Calendar.TUESDAY to "Mar", Calendar.WEDNESDAY to "Mié",
+        Calendar.THURSDAY to "Jue", Calendar.FRIDAY to "Vie", Calendar.SATURDAY to "Sáb",
+        Calendar.SUNDAY to "Dom"
+    )
+
+    private fun crearDias(elegidos: Set<Int>) {
+        val grupo = findViewById<ChipGroup>(R.id.grupoDias)
+        for ((dia, nombre) in ordenDias) {
+            val chip = Chip(this).apply {
+                text = nombre
+                isCheckable = true
+                isCheckedIconVisible = false
+                isChecked = dia in elegidos
+                setOnCheckedChangeListener { _, _ -> mostrarRepeticion() }
+            }
+            chipsDias[dia] = chip
+            grupo.addView(chip)
+        }
+        val atajos = findViewById<ChipGroup>(R.id.grupoAtajos)
+        val opciones = listOf(
+            "Una vez" to emptySet<Int>(),
+            "Diario" to (1..7).toSet(),
+            "Lun a Vie" to setOf(Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY),
+            "Fin de semana" to setOf(Calendar.SATURDAY, Calendar.SUNDAY)
+        )
+        for ((nombre, dias) in opciones) {
+            atajos.addView(Chip(this).apply {
+                text = nombre
+                setOnClickListener { chipsDias.forEach { (d, c) -> c.isChecked = d in dias } }
+            })
+        }
+        mostrarRepeticion()
+    }
+
+    private fun diasElegidos(): Set<Int> = chipsDias.filterValues { it.isChecked }.keys
+
+    private fun mostrarRepeticion() {
+        val d = diasElegidos()
+        txtRepeticion.text = when {
+            d.isEmpty() -> "Sonará una sola vez"
+            d.size == 7 -> "Todos los días"
+            d == setOf(Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY) -> "De lunes a viernes"
+            d == setOf(Calendar.SATURDAY, Calendar.SUNDAY) -> "Fines de semana"
+            else -> "Cada semana: " + ordenDias.filter { it.first in d }.joinToString(", ") { it.second }
+        }
+    }
+
+    // ---------- Actualizaciones ----------
+
+    private fun buscarActualizacion(manual: Boolean) {
+        if (manual) Toast.makeText(this, "Buscando…", Toast.LENGTH_SHORT).show()
+        Thread {
+            val v = try { Actualizador.buscar() } catch (_: Exception) { null }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when {
+                    v != null && v.numero > Actualizador.versionActual(this) ->
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("Nueva versión ${v.nombre}")
+                            .setMessage("Hay una versión nueva de Despierta. ¿Descargarla e instalarla?")
+                            .setPositiveButton("Actualizar") { _, _ -> descargarEInstalar(v) }
+                            .setNegativeButton("Después", null)
+                            .show()
+                    manual && v != null -> Toast.makeText(this, "Ya tienes la última versión", Toast.LENGTH_SHORT).show()
+                    manual -> Toast.makeText(this, "No se pudo revisar. ¿Hay internet?", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun descargarEInstalar(v: Actualizador.Version) {
+        val barra = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            setPadding(60, 40, 60, 0)
+        }
+        val dialogo = MaterialAlertDialogBuilder(this)
+            .setTitle("Descargando ${v.nombre}…")
+            .setView(barra)
+            .setCancelable(false)
+            .show()
+        Thread {
+            try {
+                val archivo = Actualizador.descargar(this, v.url) { p ->
+                    runOnUiThread {
+                        barra.isIndeterminate = p < 0
+                        if (p >= 0) barra.progress = p
+                    }
+                }
+                runOnUiThread {
+                    dialogo.dismiss()
+                    if (!Actualizador.instalar(this, archivo)) archivoPendiente = archivo
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    dialogo.dismiss()
+                    Toast.makeText(this, "Falló la descarga: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
+
+    /** APK descargado que espera a que se dé permiso de instalar. */
+    private var archivoPendiente: java.io.File? = null
+
+    private fun instalarPendiente() {
+        val f = archivoPendiente ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) return
+        archivoPendiente = null
+        Actualizador.instalar(this, f)
     }
 }
