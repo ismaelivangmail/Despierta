@@ -30,7 +30,7 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class AlarmActivity : AppCompatActivity() {
+class AlarmActivity : AlarmaBaseActivity() {
 
     companion object {
         /** Confianza mínima para aceptar el objeto. */
@@ -98,6 +98,7 @@ class AlarmActivity : AppCompatActivity() {
             objetivos.joinToString("\n") { "${it.first.emoji}  ${it.first.nombre}" }
 
         txtReloj.post(tick)
+        if (savedInstanceState == null) animarIntro() else findViewById<android.view.View>(R.id.capaIntro).visibility = android.view.View.GONE
 
         val alarma = Alarmas.sonando(this)
         val btnVirtual = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnVirtual)
@@ -133,6 +134,63 @@ class AlarmActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         proveedor?.unbindAll()
+    }
+
+    /** Pantalla de entrada: el godín temblando, el fondo parpadeando como alarma y el texto saltando. */
+    private fun animarIntro() {
+        val capa = findViewById<android.view.View>(R.id.capaIntro)
+        val godin = findViewById<android.view.View>(R.id.imgGodin)
+        val texto = findViewById<android.view.View>(R.id.txtIntro)
+        val animaciones = mutableListOf<android.animation.Animator>()
+
+        // Temblor 🫨
+        animaciones += android.animation.ObjectAnimator.ofFloat(godin, android.view.View.ROTATION, -12f, 12f).apply {
+            duration = 70; repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+        }
+        animaciones += android.animation.ObjectAnimator.ofFloat(godin, android.view.View.TRANSLATION_X, -10f, 10f).apply {
+            duration = 55; repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+        }
+        // Latido
+        animaciones += android.animation.AnimatorSet().apply {
+            playTogether(
+                android.animation.ObjectAnimator.ofFloat(godin, android.view.View.SCALE_X, 0.9f, 1.1f),
+                android.animation.ObjectAnimator.ofFloat(godin, android.view.View.SCALE_Y, 0.9f, 1.1f)
+            )
+            childAnimations.forEach {
+                (it as android.animation.ValueAnimator).apply {
+                    duration = 400; repeatMode = android.animation.ValueAnimator.REVERSE
+                    repeatCount = android.animation.ValueAnimator.INFINITE
+                }
+            }
+        }
+        // Texto saltando
+        animaciones += android.animation.ObjectAnimator.ofFloat(texto, android.view.View.TRANSLATION_Y, 0f, -24f).apply {
+            duration = 300; repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = android.view.animation.DecelerateInterpolator()
+        }
+        // Fondo parpadeando rojo / naranja
+        animaciones += android.animation.ValueAnimator.ofArgb(0xFFB71C1C.toInt(), 0xFFFF6D00.toInt()).apply {
+            duration = 350; repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            addUpdateListener { capa.setBackgroundColor(it.animatedValue as Int) }
+        }
+        animaciones.forEach { it.start() }
+
+        var cerrada = false
+        val cerrar = {
+            if (!cerrada) {
+                cerrada = true
+                capa.animate().alpha(0f).setDuration(400).withEndAction {
+                    capa.visibility = android.view.View.GONE
+                    animaciones.forEach { it.cancel() }
+                }.start()
+            }
+        }
+        capa.setOnClickListener { cerrar() }
+        capa.postDelayed({ cerrar() }, 4000)
     }
 
     private fun iniciarCamara() {

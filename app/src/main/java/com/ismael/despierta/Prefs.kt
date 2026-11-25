@@ -55,6 +55,17 @@ object Prefs {
         p.edit().putString("alarmas", arr.toString()).commit()
     }
 
+    // ---------- Volumen ----------
+
+    /** Volumen de la alarma en % (10..100). */
+    fun volumen(c: Context) = sp(c).getInt("volumen", 100).coerceIn(10, 100)
+    /** Si está activo, no se puede bajar el volumen mientras suena. */
+    fun forzarVolumen(c: Context) = sp(c).getBoolean("forzar_volumen", true)
+
+    fun guardarVolumen(c: Context, volumen: Int, forzar: Boolean) {
+        sp(c).edit().putInt("volumen", volumen).putBoolean("forzar_volumen", forzar).apply()
+    }
+
     // ---------- Alarma sonando ----------
 
     fun sonandoId(c: Context) = sp(c).getInt("sonando_id", -1)

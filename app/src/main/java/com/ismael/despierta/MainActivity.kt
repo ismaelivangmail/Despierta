@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.txtVersion).text = "Versión ${Actualizador.nombreActual(this)}"
         findViewById<MaterialButton>(R.id.btnActualizar).setOnClickListener { buscarActualizacion(true) }
 
+        prepararVolumen()
         Programador.programarTodas(this)
         pedirPermisosNecesarios()
         if (savedInstanceState == null) buscarActualizacion(false)
@@ -171,6 +173,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun avisarCuanto(cuando: Long) {
         Toast.makeText(this, "Sonará en " + faltan(cuando), Toast.LENGTH_SHORT).show()
+    }
+
+    // ---------- Volumen ----------
+
+    private fun prepararVolumen() {
+        val txt = findViewById<TextView>(R.id.txtVolumen)
+        val slider = findViewById<Slider>(R.id.sliderVolumen)
+        val sw = findViewById<SwitchMaterial>(R.id.swForzar)
+        slider.value = (Prefs.volumen(this) / 10 * 10).coerceIn(10, 100).toFloat()
+        sw.isChecked = Prefs.forzarVolumen(this)
+        fun actualizar() {
+            val v = slider.value.toInt()
+            txt.text = "🔊 Volumen de la alarma: $v%"
+            Prefs.guardarVolumen(this, v, sw.isChecked)
+        }
+        slider.addOnChangeListener { _, _, _ -> actualizar() }
+        sw.setOnCheckedChangeListener { _, _ -> actualizar() }
+        actualizar()
     }
 
     // ---------- Permisos ----------

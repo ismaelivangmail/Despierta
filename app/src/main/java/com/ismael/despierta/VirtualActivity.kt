@@ -32,12 +32,13 @@ import java.util.concurrent.Executors
  * Hay que girar con el teléfono hasta verlo y caminar hacia él los pasos equivalentes
  * a la distancia configurada. Los pasos solo cuentan mientras lo tienes enfrente.
  */
-class VirtualActivity : AppCompatActivity(), SensorEventListener {
+class VirtualActivity : AlarmaBaseActivity(), SensorEventListener {
 
     companion object {
         const val METROS_POR_PASO = 0.7f
         const val CAMPO_VISION = 60f   // grados que abarca la pantalla a lo ancho
-        const val TOLERANCIA = 35f     // grados para considerar que lo tienes enfrente
+        const val TOLERANCIA_CENTRO = 12f   // grados para considerar que está en el centro
+        const val CUADROS_PARA_ATRAPAR = 12 // ~medio segundo centrado
     }
 
     private lateinit var vistaCamara: PreviewView
@@ -66,6 +67,8 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
     private var pasosNecesarios = 4
     private var pasos = 0
     private var pasosTotales = 0
+    private var atrapado = false
+    private var cuadrosCentrado = 0
     private lateinit var txtDiag: TextView
     private var terminado = false
 
@@ -85,6 +88,7 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
         if (savedInstanceState != null) {
             objetivo = savedInstanceState.getFloat("objetivo", Float.NaN)
             pasos = savedInstanceState.getInt("pasos", 0)
+            atrapado = savedInstanceState.getBoolean("atrapado", false)
         }
 
         ObjectAnimator.ofFloat(reloj, View.ROTATION, -14f, 14f).apply {
@@ -98,7 +102,9 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
                 terminado = true
                 Alarmas.apagar(this, "⏰")
             } else {
-                Toast.makeText(this, "¡Todavía está lejos! Camina hacia él", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this,
+                    if (atrapado) "¡Todavía está lejos! Camina hacia él" else "Primero ponlo en el centro de la pantalla",
+                    Toast.LENGTH_SHORT).show()
             }
         }
         findViewById<MaterialButton>(R.id.btnVolver).setOnClickListener { finish() }
@@ -121,6 +127,7 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
         super.onSaveInstanceState(outState)
         outState.putFloat("objetivo", objetivo)
         outState.putInt("pasos", pasos)
+        outState.putBoolean("atrapado", atrapado)
     }
 
     override fun onResume() {
@@ -234,35 +241,61 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
 
     private fun diferencia(): Float = normalizar(objetivo - rumbo)
 
+    /**
+     * Fases: 1) BUSCAR girando hasta tenerlo en el centro; 2) al encontrarlo queda "atrapado"
+     * en el centro y solo hay que CAMINAR los pasos; 3) al llegar, tocarlo.
+     * Así ya no se mueve de lugar mientras caminas (al caminar el teléfono se bambolea).
+     */
     private fun dibujar() {
         if (terminado || rumbo.isNaN() || objetivo.isNaN()) return
-        val dif = diferencia()
         val ancho = (reloj.parent as View).width.toFloat()
         val alto = (reloj.parent as View).height.toFloat()
-        val progreso = pasos.toFloat() / pasosNecesarios
+        val progreso = (pasos.toFloat() / pasosNecesarios).coerceAtMost(1f)
         val llego = pasos >= pasosNecesarios
 
-        val pxPorGrado = pixelesPorGrado(ancho, alto)
-        val x = ancho / 2f + dif * pxPorGrado
-        if (x > -reloj.width && x < ancho + reloj.width) {
+        txtDiag.text = (if (modoCamara) "📷 " else "🧭 ") + "%d°  ·  ⏰ %d°  ·  pasos detectados: %d".format(
+            normalizar360(rumbo), normalizar360(objetivo), pasosTotales)
+
+        if (atrapado) {
             reloj.visibility = View.VISIBLE
-            val escala = 0.6f + 1.6f * progreso.coerceAtMost(1f)
+            val escala = 0.9f + 1.4f * progreso
             reloj.scaleX = escala
             reloj.scaleY = escala
+            reloj.translationX = ancho / 2f - reloj.width / 2f
+            reloj.translationY = alto * 0.5f - reloj.height / 2f
+            txtInfo.text = if (llego) "¡Llegaste! Toca el despertador ⏰" else "🚶 ¡Lo encontraste! Camina hacia él"
+            return
+        }
+
+        val dif = diferencia()
+        val x = ancho / 2f + dif * pixelesPorGrado(ancho, alto)
+        if (x > -reloj.width && x < ancho + reloj.width) {
+            reloj.visibility = View.VISIBLE
+            reloj.scaleX = 0.8f
+            reloj.scaleY = 0.8f
             reloj.translationX = x - reloj.width / 2f
-            reloj.translationY = alto * 0.48f - reloj.height / 2f
+            reloj.translationY = alto * 0.5f - reloj.height / 2f
         } else {
             reloj.visibility = View.INVISIBLE
         }
 
-        txtDiag.text = (if (modoCamara) "📷 " else "🧭 ") + "%d°  ·  ⏰ %d°  ·  pasos detectados: %d".format(
-            normalizar360(rumbo), normalizar360(objetivo), pasosTotales)
-        txtInfo.text = when {
-            llego -> "¡Llegaste! Toca el despertador ⏰"
-            abs(dif) <= TOLERANCIA -> "🚶 ¡Camina hacia él!"
-            abs(dif) > 135 -> "🔄 Está detrás de ti, date la vuelta"
-            dif > 0 -> "➡️ Gira a la derecha"
-            else -> "⬅️ Gira a la izquierda"
+        // ¿Ya lo tiene enfrente? Si se mantiene centrado un momento, queda atrapado.
+        if (abs(dif) <= TOLERANCIA_CENTRO) {
+            cuadrosCentrado++
+            if (cuadrosCentrado >= CUADROS_PARA_ATRAPAR) {
+                atrapado = true
+                reloj.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                dibujar()
+                return
+            }
+            txtInfo.text = "🎯 ¡Ahí está! Mantenlo en el centro…"
+        } else {
+            cuadrosCentrado = 0
+            txtInfo.text = when {
+                abs(dif) > 135 -> "🔄 Está detrás de ti, date la vuelta"
+                dif > 0 -> "➡️ Gira a la derecha"
+                else -> "⬅️ Gira a la izquierda"
+            }
         }
     }
 
@@ -283,12 +316,10 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
 
     private fun alDarPaso() {
         pasosTotales++
-        if (terminado || pasos >= pasosNecesarios || objetivo.isNaN() || rumbo.isNaN()) return
-        if (abs(diferencia()) <= TOLERANCIA) {
-            pasos++
-            actualizarProgreso()
-            dibujar()
-        }
+        if (terminado || !atrapado || pasos >= pasosNecesarios) return
+        pasos++
+        actualizarProgreso()
+        dibujar()
     }
 
     private fun actualizarProgreso() {

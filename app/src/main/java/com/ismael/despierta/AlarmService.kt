@@ -38,6 +38,26 @@ class AlarmService : Service() {
     private var vibrador: Vibrator? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var volumenOriginal = -1
+    private var volumenObjetivo = -1
+
+    private fun aplicarVolumen() {
+        if (volumenObjetivo < 0) return
+        try {
+            val am = getSystemService(AudioManager::class.java)
+            if (am.getStreamVolume(AudioManager.STREAM_ALARM) != volumenObjetivo) {
+                am.setStreamVolume(AudioManager.STREAM_ALARM, volumenObjetivo, 0)
+            }
+        } catch (_: Exception) { }
+    }
+
+    /** Volumen forzado: si alguien lo baja, se vuelve a subir de inmediato. */
+    private val vigilarVolumen = object : Runnable {
+        override fun run() {
+            if (!sonando) return
+            aplicarVolumen()
+            handler.postDelayed(this, 300)
+        }
+    }
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -81,8 +101,9 @@ class AlarmService : Service() {
     private fun sonar() {
         val am = getSystemService(AudioManager::class.java)
         volumenOriginal = am.getStreamVolume(AudioManager.STREAM_ALARM)
-        val max = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-        try { am.setStreamVolume(AudioManager.STREAM_ALARM, max, 0) } catch (_: Exception) {}
+        volumenObjetivo = (am.getStreamMaxVolume(AudioManager.STREAM_ALARM) * Prefs.volumen(this) + 99) / 100
+        aplicarVolumen()
+        if (Prefs.forzarVolumen(this)) handler.post(vigilarVolumen)
 
         val candidatos = listOfNotNull(
             alarma?.tono?.let { Uri.parse(it) },

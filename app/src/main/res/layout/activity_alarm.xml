@@ -78,4 +78,54 @@
             android:textColor="@color/blanco"
             android:textSize="16sp" />
     </LinearLayout>
+
+    <!-- Animación de entrada: el godín despertando -->
+    <LinearLayout
+        android:id="@+id/capaIntro"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFB71C1C"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:id="@+id/imgGodin"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:contentDescription="Godín despertando"
+            android:src="@drawable/godin_circulo" />
+
+        <TextView
+            android:id="@+id/txtIntro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:gravity="center"
+            android:text="¡ARRIBA, GODÍN!"
+            android:textColor="@color/blanco"
+            android:textSize="40sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtIntro2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="La chamba no se va a hacer sola 💼"
+            android:textColor="@color/blanco"
+            android:textSize="20sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:alpha="0.7"
+            android:text="Toca para continuar"
+            android:textColor="@color/blanco"
+            android:textSize="14sp" />
+    </LinearLayout>
 </FrameLayout>

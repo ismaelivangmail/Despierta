@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 
 /** Reto: caminar cierta cantidad de pasos para apagar la alarma. */
-class PasosActivity : AppCompatActivity() {
+class PasosActivity : AlarmaBaseActivity() {
 
     private lateinit var contador: ContadorPasos
     private var meta = 30
