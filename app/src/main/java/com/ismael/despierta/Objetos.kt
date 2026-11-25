@@ -23,53 +23,32 @@ object Objetos {
         // Baño
         Objeto("papel_bano", "Papel de baño", "🧻", "baño", listOf("toilet tissue")),
         Objeto("lavabo", "Lavabo", "🚰", "baño", listOf("washbasin")),
-        Objeto("inodoro", "Inodoro (tapa)", "🚽", "baño", listOf("toilet seat")),
-        Objeto("jabon", "Despachador de jabón", "🧴", "baño", listOf("soap dispenser")),
+        Objeto("inodoro", "Taza del baño (con la tapa abierta)", "🚽", "baño", listOf("toilet seat")),
         Objeto("toalla", "Toalla", "🛁", "baño", listOf("bath towel")),
-        Objeto("cortina", "Cortina de baño", "🚿", "baño", listOf("shower curtain")),
-        Objeto("tina", "Tina de baño", "🛀", "baño", listOf("bathtub")),
-        Objeto("destapacanos", "Destapacaños", "🪠", "baño", listOf("plunger")),
 
         // Cocina
         Objeto("refri", "Refrigerador", "🧊", "cocina", listOf("refrigerator")),
         Objeto("microondas", "Microondas", "📦", "cocina", listOf("microwave")),
         Objeto("estufa", "Estufa", "🔥", "cocina", listOf("stove")),
-        Objeto("tostador", "Tostador", "🍞", "cocina", listOf("toaster")),
         Objeto("sarten", "Sartén", "🍳", "cocina", listOf("frying pan", "wok")),
-        Objeto("cafetera", "Cafetera", "☕", "cocina", listOf("coffeepot", "espresso maker")),
-        Objeto("tetera", "Tetera", "🫖", "cocina", listOf("teapot")),
-        Objeto("taza", "Taza", "🍵", "cocina", listOf("coffee mug", "cup")),
-        Objeto("tazon", "Tazón / bowl", "🥣", "cocina", listOf("mixing bowl", "soup bowl")),
-        Objeto("jarra", "Jarra", "🫗", "cocina", listOf("pitcher", "water jug")),
-        Objeto("botella", "Botella", "🍶", "cocina", listOf("water bottle", "pop bottle", "beer bottle", "wine bottle")),
-        Objeto("cuchara_madera", "Cuchara de madera", "🥄", "cocina", listOf("wooden spoon")),
-        Objeto("espatula", "Espátula", "🍳", "cocina", listOf("spatula")),
-        Objeto("cucharon", "Cucharón", "🥄", "cocina", listOf("ladle")),
-        Objeto("abrelatas", "Abrelatas", "🥫", "cocina", listOf("can opener")),
-        Objeto("salero", "Salero", "🧂", "cocina", listOf("saltshaker")),
-        Objeto("toalla_papel", "Rollo de toalla de papel", "🧻", "cocina", listOf("paper towel")),
-        Objeto("escurridor", "Escurridor de platos", "🍽️", "cocina", listOf("plate rack")),
+        Objeto("taza", "Taza", "☕", "cocina", listOf("coffee mug", "cup")),
+        Objeto("tazon", "Plato hondo / tazón", "🥣", "cocina", listOf("mixing bowl", "soup bowl")),
+        Objeto("garrafon", "Garrafón o jarra de agua", "💧", "cocina", listOf("water jug", "pitcher")),
+        Objeto("botella", "Botella (agua o refresco)", "🍶", "cocina", listOf("water bottle", "pop bottle", "beer bottle")),
         Objeto("platano", "Plátano", "🍌", "cocina", listOf("banana")),
-        Objeto("naranja", "Naranja", "🍊", "cocina", listOf("orange")),
 
-        // Limpieza / lavado
-        Objeto("lavadora", "Lavadora", "🫧", "limpieza", listOf("washer")),
-        Objeto("plancha", "Plancha", "👕", "limpieza", listOf("iron")),
-        Objeto("aspiradora", "Aspiradora", "🌀", "limpieza", listOf("vacuum")),
+        // Limpieza
         Objeto("escoba", "Escoba", "🧹", "limpieza", listOf("broom")),
         Objeto("trapeador", "Trapeador", "🧽", "limpieza", listOf("swab")),
         Objeto("cubeta", "Cubeta", "🪣", "limpieza", listOf("bucket")),
         Objeto("basura", "Bote de basura", "🗑️", "limpieza", listOf("ashcan")),
+        Objeto("lavadora", "Lavadora", "🫧", "limpieza", listOf("washer")),
+        Objeto("plancha", "Plancha", "👕", "limpieza", listOf("iron")),
 
-        // Sala / comedor / entrada
+        // Sala / comedor
         Objeto("sillon", "Sillón", "🛋️", "sala", listOf("studio couch")),
         Objeto("mesa", "Mesa del comedor", "🪑", "sala", listOf("dining table")),
-        Objeto("librero", "Librero", "📚", "sala", listOf("bookcase")),
-        Objeto("maceta", "Maceta", "🪴", "sala", listOf("pot")),
-        Objeto("florero", "Florero", "💐", "sala", listOf("vase")),
-        Objeto("tapete", "Tapete de entrada", "🚪", "sala", listOf("doormat")),
-        Objeto("vela", "Vela", "🕯️", "sala", listOf("candle")),
-        Objeto("paraguas", "Paraguas", "☂️", "sala", listOf("umbrella"))
+        Objeto("maceta", "Maceta", "🪴", "sala", listOf("pot"))
     )
 
     fun porId(id: String): Objeto? = todos.firstOrNull { it.id == id }

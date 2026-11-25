@@ -54,6 +54,15 @@
             android:layout_marginTop="8dp"
             android:max="100"
             android:progressTint="@color/azul" />
+
+        <TextView
+            android:id="@+id/txtDiag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:alpha="0.7"
+            android:textColor="@color/blanco"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton

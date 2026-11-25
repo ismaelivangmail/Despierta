@@ -38,6 +38,7 @@ class PasosActivity : AppCompatActivity() {
                 }
             }
         }
+        if (!contador.disponible) txt.text = "Sin sensor 😕"
         vigilar()
     }
 

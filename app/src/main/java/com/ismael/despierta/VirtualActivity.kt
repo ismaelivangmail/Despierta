@@ -34,7 +34,7 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
     companion object {
         const val METROS_POR_PASO = 0.7f
         const val CAMPO_VISION = 60f   // grados que abarca la pantalla a lo ancho
-        const val TOLERANCIA = 25f     // grados para considerar que lo tienes enfrente
+        const val TOLERANCIA = 35f     // grados para considerar que lo tienes enfrente
     }
 
     private lateinit var vistaCamara: PreviewView
@@ -57,6 +57,8 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
     private var objetivo = Float.NaN       // dónde está el despertador (grados)
     private var pasosNecesarios = 4
     private var pasos = 0
+    private var pasosTotales = 0
+    private lateinit var txtDiag: TextView
     private var terminado = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +70,7 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
         txtInfo = findViewById(R.id.txtInfo)
         txtProgreso = findViewById(R.id.txtProgreso)
         barra = findViewById(R.id.barraCamino)
+        txtDiag = findViewById(R.id.txtDiag)
 
         val metros = Alarmas.sonando(this)?.distancia ?: 3
         pasosNecesarios = ceil(metros / METROS_POR_PASO).toInt().coerceAtLeast(2)
@@ -112,7 +115,9 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
         } else {
             // Teléfonos sin giroscopio: brújula + acelerómetro
             sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-            sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+            val mag = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+            if (mag == null) txtInfo.text = "⚠️ Tu teléfono no tiene brújula ni giroscopio; usa otra opción"
+            else sm.registerListener(this, mag, SensorManager.SENSOR_DELAY_GAME)
         }
         contador.iniciar()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -208,6 +213,8 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
             reloj.visibility = View.INVISIBLE
         }
 
+        txtDiag.text = "🧭 %d°  ·  ⏰ %d°  ·  pasos detectados: %d".format(
+            normalizar360(rumbo), normalizar360(objetivo), pasosTotales)
         txtInfo.text = when {
             llego -> "¡Llegaste! Toca el despertador ⏰"
             abs(dif) <= TOLERANCIA -> "🚶 ¡Camina hacia él!"
@@ -217,7 +224,10 @@ class VirtualActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    private fun normalizar360(a: Float): Int = ((a % 360f + 360f) % 360f).toInt()
+
     private fun alDarPaso() {
+        pasosTotales++
         if (terminado || pasos >= pasosNecesarios || objetivo.isNaN() || rumbo.isNaN()) return
         if (abs(diferencia()) <= TOLERANCIA) {
             pasos++

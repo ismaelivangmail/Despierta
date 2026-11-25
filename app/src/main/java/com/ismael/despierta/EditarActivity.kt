@@ -8,6 +8,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.text.format.DateFormat
 import android.view.Gravity
 import android.view.View
@@ -52,6 +53,18 @@ class EditarActivity : AppCompatActivity() {
             val datos = r.data ?: return@registerForActivityResult
             if (r.resultCode == RESULT_OK) {
                 tono = IntentCompat.getParcelableExtra(datos, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)?.toString()
+                mostrarTono()
+            }
+        }
+
+    /** Canción o audio guardado en el teléfono (mp3, m4a, etc.). */
+    private val elegirAudio =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                try {
+                    contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (_: Exception) { }
+                tono = uri.toString()
                 mostrarTono()
             }
         }
@@ -102,14 +115,12 @@ class EditarActivity : AppCompatActivity() {
         sliderPasos.addOnChangeListener { _, _, _ -> mostrarRetos() }
 
         findViewById<View>(R.id.filaTono).setOnClickListener {
-            elegirTono.launch(Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM or RingtoneManager.TYPE_RINGTONE)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Sonido de la alarma")
-                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                    tono?.let { Uri.parse(it) } ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-            })
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Sonido de la alarma")
+                .setItems(arrayOf("🔔 Tonos del teléfono", "🎵 Canción o audio guardado (mp3…)")) { _, i ->
+                    if (i == 0) abrirTonos() else elegirAudio.launch(arrayOf("audio/*"))
+                }
+                .show()
         }
         findViewById<View>(R.id.btnCancelar).setOnClickListener { finish() }
         findViewById<View>(R.id.btnGuardar).setOnClickListener {
@@ -202,9 +213,32 @@ class EditarActivity : AppCompatActivity() {
 
     // ---------- Otros ----------
 
+    private fun abrirTonos() {
+        elegirTono.launch(Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM or RingtoneManager.TYPE_RINGTONE)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Sonido de la alarma")
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                tono?.let { Uri.parse(it) } ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+        })
+    }
+
     private fun mostrarTono() {
-        txtTono.text = tono?.let { RingtoneManager.getRingtone(this, Uri.parse(it))?.getTitle(this) }
-            ?: "Predeterminado"
+        val t = tono
+        if (t == null) { txtTono.text = "Predeterminado"; return }
+        val uri = Uri.parse(t)
+        // Primero intentamos el nombre del archivo (canciones), luego el título del tono
+        val nombreArchivo = try {
+            if (uri.authority != "media" && uri.scheme == "content") {
+                contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                    if (c.moveToFirst()) c.getString(0) else null
+                }
+            } else null
+        } catch (_: Exception) { null }
+        txtTono.text = nombreArchivo?.let { "🎵 $it" }
+            ?: try { RingtoneManager.getRingtone(this, uri)?.getTitle(this) } catch (_: Exception) { null }
+            ?: "Sonido personalizado"
     }
 
     private fun mostrarRetos() {

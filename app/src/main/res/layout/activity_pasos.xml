@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:gravity="center"
-        android:text="Camina por la casa con el teléfono en la mano.\nLa alarma se apaga al completar los pasos."
+        android:text="Camina por la casa con el teléfono en la mano.\nLa alarma se apaga al completar los pasos.\n(Si no avanza, camina con paso firme)"
         android:textColor="@color/blanco"
         android:textSize="17sp" />
 
