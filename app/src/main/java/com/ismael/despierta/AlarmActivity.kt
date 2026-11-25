@@ -89,10 +89,7 @@ class AlarmActivity : AppCompatActivity() {
         ejecutor = Executors.newSingleThreadExecutor()
         val c = Clasificador(this)
         clasificador = c
-        objetivos = Prefs.objetos(this)
-            .mapNotNull { Objetos.porId(it) }
-            .ifEmpty { Objetos.predeterminados.mapNotNull { Objetos.porId(it) } }
-            .map { it to c.indicesDe(it) }
+        objetivos = Objetos.sorteoActual(this).map { it to c.indicesDe(it) }
 
         findViewById<TextView>(R.id.txtObjetivos).text =
             objetivos.joinToString("\n") { "${it.first.emoji}  ${it.first.nombre}" }

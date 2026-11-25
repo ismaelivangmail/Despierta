@@ -13,6 +13,7 @@ class AlarmReceiver : BroadcastReceiver() {
         } else {
             Prefs.desactivar(context)
         }
+        Prefs.borrarSorteo(context)
         ContextCompat.startForegroundService(context, Intent(context, AlarmService::class.java))
     }
 }

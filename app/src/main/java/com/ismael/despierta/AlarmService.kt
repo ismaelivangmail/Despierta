@@ -49,6 +49,7 @@ class AlarmService : Service() {
 
         if (!sonando) {
             sonando = true
+            Objetos.sorteoActual(this)
             val pm = getSystemService(PowerManager::class.java)
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "despierta:alarma").apply {
                 acquire(LIMITE_MS + 60_000L)
@@ -153,6 +154,7 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         sonando = false
+        Prefs.borrarSorteo(this)
         handler.removeCallbacksAndMessages(null)
         try { reproductor?.stop() } catch (_: Exception) {}
         reproductor?.release()

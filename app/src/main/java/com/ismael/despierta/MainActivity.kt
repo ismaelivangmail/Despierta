@@ -11,8 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.format.DateFormat
-import android.widget.CheckBox
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.Toast
@@ -33,11 +31,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var swRepetir: SwitchMaterial
     private lateinit var txtTono: TextView
     private lateinit var txtEstado: TextView
-    private lateinit var txtContador: TextView
     private lateinit var btnPantallaCompleta: MaterialButton
 
     private var tono: Uri? = null
-    private val casillas = mutableMapOf<String, CheckBox>()
 
     private val pedirPermisos =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -62,17 +58,15 @@ class MainActivity : AppCompatActivity() {
         swRepetir = findViewById(R.id.swRepetir)
         txtTono = findViewById(R.id.txtTono)
         txtEstado = findViewById(R.id.txtEstado)
-        txtContador = findViewById(R.id.txtContador)
         btnPantallaCompleta = findViewById(R.id.btnPantallaCompleta)
 
         selectorHora.setIs24HourView(DateFormat.is24HourFormat(this))
         selectorHora.hour = Prefs.hora(this)
         selectorHora.minute = Prefs.minuto(this)
-        swActiva.isChecked = Prefs.activa(this) || !yaConfigurada()
+        swActiva.isChecked = Prefs.activa(this) || !Prefs.configurada(this)
         swRepetir.isChecked = Prefs.repetir(this)
         tono = Prefs.tono(this)
         mostrarTono()
-        crearListaObjetos()
 
         findViewById<MaterialButton>(R.id.btnTono).setOnClickListener {
             val i = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
@@ -89,8 +83,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnGuardar).setOnClickListener { guardar() }
 
         findViewById<MaterialButton>(R.id.btnProbar).setOnClickListener {
-            if (!guardarPreferencias()) return@setOnClickListener
+            guardarPreferencias()
             Programador.programar(this)
+            Prefs.borrarSorteo(this)
             ContextCompat.startForegroundService(this, Intent(this, AlarmService::class.java))
             startActivity(Intent(this, AlarmActivity::class.java))
         }
@@ -111,56 +106,20 @@ class MainActivity : AppCompatActivity() {
         mostrarEstado()
     }
 
-    private fun yaConfigurada() =
-        getSharedPreferencesExists()
-
-    private fun getSharedPreferencesExists(): Boolean =
-        createDeviceProtectedStorageContext()
-            .getSharedPreferences("despierta", MODE_PRIVATE).contains("hora")
-
-    private fun crearListaObjetos() {
-        val contenedor = findViewById<LinearLayout>(R.id.listaObjetos)
-        val elegidos = Prefs.objetos(this)
-        for (obj in Objetos.todos) {
-            val cb = CheckBox(this).apply {
-                text = "${obj.emoji}  ${obj.nombre}"
-                textSize = 17f
-                isChecked = obj.id in elegidos
-                setOnCheckedChangeListener { _, _ -> actualizarLimite() }
-            }
-            casillas[obj.id] = cb
-            contenedor.addView(cb)
-        }
-        actualizarLimite()
-    }
-
-    /** Máximo 3 objetos: al llegar a 3 se deshabilitan los demás. */
-    private fun actualizarLimite() {
-        val n = casillas.values.count { it.isChecked }
-        casillas.values.forEach { it.isEnabled = it.isChecked || n < 3 }
-        txtContador.text = "Elegidos: $n de 3" + if (n < 3) " (es mejor tener 3 por si no encuentras uno)" else ""
-    }
-
     private fun mostrarTono() {
         val nombre = tono?.let { RingtoneManager.getRingtone(this, it)?.getTitle(this) } ?: "predeterminado"
         txtTono.text = "Tono: $nombre"
     }
 
-    private fun guardarPreferencias(): Boolean {
-        val elegidos = casillas.filterValues { it.isChecked }.keys
-        if (elegidos.isEmpty()) {
-            Toast.makeText(this, "Elige al menos un objeto", Toast.LENGTH_SHORT).show()
-            return false
-        }
+    private fun guardarPreferencias() {
         Prefs.guardar(
             this, selectorHora.hour, selectorHora.minute,
-            swActiva.isChecked, swRepetir.isChecked, tono, elegidos
+            swActiva.isChecked, swRepetir.isChecked, tono
         )
-        return true
     }
 
     private fun guardar() {
-        if (!guardarPreferencias()) return
+        guardarPreferencias()
         val cuando = Programador.programar(this)
         if (cuando != null) {
             val falta = cuando - System.currentTimeMillis()
